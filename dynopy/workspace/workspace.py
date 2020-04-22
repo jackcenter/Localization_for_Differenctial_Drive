@@ -45,3 +45,7 @@ class Workspace:
         plt.axis('equal')
         plt.xticks(range(x_min, x_max, 10))
         plt.yticks(range(y_min, y_max, 10))
+
+    def add_agent(self, agent):
+        self.robots.append(agent)
+        agent.set_workspace(self)

@@ -1,6 +1,7 @@
 import csv
-from config import config
+import os
 
+from config import config
 from dynopy.workspace.agents import DifferentialDrive
 from dynopy.workspace.landmarks import Landmark
 from dynopy.workspace.obstacles import Obstacle
@@ -13,25 +14,25 @@ def initialize_workspace(program_name):
     :param program_name:
     :return:
     """
-    cfg = config.get_parameters(program_name)
+    cfg = config.get_program_parameters(program_name)
     bounds = load_map_data(cfg["map_file"])
     obstacles = load_obstacle_data(cfg["obstacle_file"])
     landmarks = load_landmark_data(cfg["landmark_file"])
     return Workspace(bounds, obstacles, landmarks)
 
 
-def initialize_robot(program_name):
+def initialize_agent(name, pose_file):
     """
 
-    :param program_name:
+    :param name:
+    :param pose_file:
     :return:
     """
-    cfg = config.get_parameters(program_name)
-    robot_settings = load_robot_settings(cfg["settings_file"])
-    state = load_pose(cfg["pose_file"])
-    robot = DifferentialDrive(robot_settings, state)
-    robot.read_inputs(cfg["inputs_file"])
-    pass
+    base_folder = os.getcwd()
+    cfg = config.get_agent_parameters(name)
+    state = load_pose(pose_file)
+    robot = DifferentialDrive(cfg["name"], cfg["color"], cfg["process_noise"], cfg["measurement_noise"], state)
+    return robot
 
 
 def load_map_data(file):

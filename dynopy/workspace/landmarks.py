@@ -15,7 +15,7 @@ class Landmark:
         Plots as a square
         :return: none
         """
-        plt.plot(self.vertices[0], self.vertices[1], 's')
+        plt.plot(self.vertices[0], self.vertices[1], '1', markersize=12)
 
     def get_x(self):
         return self.vertices[0]

@@ -1,4 +1,6 @@
 import matplotlib.pyplot as plt
+
+from config import config
 from tools import initialize
 
 
@@ -20,10 +22,18 @@ def run(sim_name):
 
 
 def setup():
+    cfg = config.get_program_parameters("single_simulation")
     workspace = initialize.initialize_workspace("single_simulation")
+
+    agent1 = initialize.initialize_agent("Inky", cfg["pose1_file"])
+    agent1.read_inputs(cfg["inputs1_file"])
+    workspace.add_agent(agent1)
+
+    agent2 = initialize.initialize_agent("Pinky", cfg["pose2_file"])
+    agent2.read_inputs(cfg["inputs2_file"])
+    workspace.add_agent(agent2)
+
     workspace.plot()
-
-
     plt.show()
 
     return workspace
