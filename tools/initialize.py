@@ -1,5 +1,6 @@
 import csv
-import os
+
+import numpy as np
 
 from config import config
 from dynopy.workspace.agents import DifferentialDrive
@@ -28,10 +29,11 @@ def initialize_agent(name, pose_file):
     :param pose_file:
     :return:
     """
-    base_folder = os.getcwd()
     cfg = config.get_agent_parameters(name)
-    state = load_pose(pose_file)
-    robot = DifferentialDrive(cfg["name"], cfg["color"], cfg["process_noise"], cfg["measurement_noise"], state)
+    state, state_names = load_pose(pose_file)
+    robot = DifferentialDrive(cfg["name"], cfg["color"], cfg["process_noise"], cfg["measurement_noise"], state,
+                              state_names, cfg["dt"], cfg["wheel_radius"], cfg["axel_length"])
+
     return robot
 
 
@@ -123,27 +125,20 @@ def load_robot_settings(file):
 
 def load_pose(file):
     """
-    Loads initial and goal state information for a robot from a text file
+    Loads initialstate information for a robot from a text file
     :param file: path and name to the file with robot state information
     :return: dictionaries for the initial state and goal state
     """
 
     with open(file, 'r', encoding='utf8') as fin:
 
-        reader = csv.DictReader(fin, skipinitialspace=True, delimiter=',')
+        reader = csv.reader(fin, skipinitialspace=True, delimiter=',')
 
-        raw_states = []
-        for state in reader:
+        state_names = next(reader)
+        raw_state_list = next(reader)
 
-            temporary_state = {}
-            for key, value in state.items():
-                try:
-                    temporary_state[key] = float(value)
-                except ValueError:
-                    temporary_state[key] = None
+        state_list = []
+        for state in raw_state_list:
+            state_list.append(float(state))
 
-            raw_states.append(temporary_state)
-
-    initial_state = raw_states[0]
-
-    return initial_state
+    return np.array(state_list), state_names

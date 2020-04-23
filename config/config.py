@@ -36,7 +36,6 @@ def get_program_parameters(program_name):
         "pose2_file": os.path.join(base_folder, 'settings', 'poses', pose2_filename),
         "inputs1_file": os.path.join(base_folder, 'settings', 'inputs', inputs1_filename),
         "inputs2_file": os.path.join(base_folder, 'settings', 'inputs', inputs2_filename),
-        "dt": 0.5,
     }
 
     return cfg
@@ -48,28 +47,28 @@ def get_agent_parameters(agent_name: str):
         color = "firebrick"
         axel_length = 10
         wheel_radius = 2.5
-        Q = np.diag([.1, .1, .1, .1, .1])
+        Q = np.diag([.1, .1, .1])
         R = np.diag([5, .1, 5, .1, 5, .1])
 
     elif agent_name == "Pinky":
         color = "orchid"
         axel_length = 10
         wheel_radius = 2.5
-        Q = np.diag([.1, .1, .1, .1, .1])
+        Q = np.diag([.1, .1, .1])
         R = np.diag([5, .1, 5, .1, 5, .1])
 
     elif agent_name == "Inky":
         color = "darkcyan"
         axel_length = 10
         wheel_radius = 2.5
-        Q = np.diag([.1, .1, .1, .1, .1])
+        Q = np.diag([.1, .1, .1])
         R = np.diag([5, .1, 5, .1, 5, .1])
 
     elif agent_name == "Clyde":
         color = "darkorange"
         axel_length = 10
         wheel_radius = 2.5
-        Q = np.diag([.1, .1, .1, .1, .1])
+        Q = np.diag([.1, .1, .1])
         R = np.diag([5, .1, 5, .1, 5, .1])
 
     else:
@@ -78,7 +77,7 @@ def get_agent_parameters(agent_name: str):
         color = "firebrick"
         axel_length = 10
         wheel_radius = 2.5
-        Q = np.diag([.1, .1, .1, .1, .1])
+        Q = np.diag([.1, .1, .1])
         R = np.diag([5, .1, 5, .1, 5, .1])
 
     cfg = {
@@ -88,6 +87,7 @@ def get_agent_parameters(agent_name: str):
         "wheel_radius": wheel_radius,
         "process_noise": Q,
         "measurement_noise": R,
+        "dt": 0.5,
     }
 
     return cfg

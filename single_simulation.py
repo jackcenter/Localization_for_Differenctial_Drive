@@ -33,6 +33,9 @@ def setup():
     agent2.read_inputs(cfg["inputs2_file"])
     workspace.add_agent(agent2)
 
+    for agent in workspace.agents:
+        agent.get_ground_truth()
+
     workspace.plot()
     plt.show()
 

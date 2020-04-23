@@ -6,7 +6,7 @@ class Workspace:
         self.boundary_coordinates = boundary_coordinates
         self.obstacles = obstacles
         self.landmarks = landmarks
-        self.robots = []
+        self.agents = []
 
         x_coordinates = [i[0] for i in self.boundary_coordinates]
         y_coordinates = [i[1] for i in self.boundary_coordinates]
@@ -34,7 +34,7 @@ class Workspace:
         for landmark in self.landmarks:
             landmark.plot()
 
-        for robot in self.robots:
+        for robot in self.agents:
             robot.plot_initial()
 
         x_min = self.x_bounds[0]
@@ -47,5 +47,5 @@ class Workspace:
         plt.yticks(range(y_min, y_max, 10))
 
     def add_agent(self, agent):
-        self.robots.append(agent)
+        self.agents.append(agent)
         agent.set_workspace(self)
