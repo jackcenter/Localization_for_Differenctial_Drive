@@ -104,6 +104,25 @@ class DifferentialDrive(TwoDimensionalRobot):
             noisy_state = monte_carlo_sample(np.reshape(x_k1, (-1, 1)), self.Q)
             self.ground_truth.append(GroundTruth(k1, np.squeeze(noisy_state), self.state_names))
 
+    def get_perfect_measurements(self):
+
+        for state in self.ground_truth:
+            k = state.get_step()
+            measurements = []
+            measurement_values = []
+            output_types = []
+            source_name = []
+
+            for landmark in self.workspace.landmarks:
+                measurements = landmark.return_measurement(state)
+
+            for meas in measurements:
+                measurement_values.append(meas[0])
+                output_types.append(meas[1])
+                source_name.append(meas[2])
+
+                # TODO: create a measurement object from these values then add them to the perf meas list!
+
     @staticmethod
     def dynamics_ode(t, x, u, L, r):
         u_r = u.u_1

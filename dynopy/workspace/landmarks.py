@@ -35,19 +35,20 @@ class Landmark:
             r = ((x2 - x1) ** 2 + (y2 - y1) ** 2) ** (1 / 2)
             b = atan2(y2 - y1, x2 - x1)
 
+            return [(r, 'range', self.name), (b, 'bearing', self.name)]
+
         elif self.range_measurements:
             r = ((x2 - x1) ** 2 + (y2 - y1) ** 2) ** (1 / 2)
-            b = None
+
+            return [(r, 'range', self.name)]
 
         elif self.bearing_measurements:
-            r = None
             b = atan2(y2 - y1, x2 - x1)
 
-        else:
-            r = None
-            b = None
+            return [(b, 'bearing', self.name)]
 
-        return r, b
+        else:
+            return []
 
     @staticmethod
     def create_from_dict(settings):
