@@ -25,20 +25,41 @@ class GroundTruth:
     def return_data_vector(self):
         return np.reshape(self.state, (-1, 1))
 
+    def return_data_dict(self):
+        data_dict = {}
+        for key, val in zip(self.state_names, self.state):
+            data_dict[key] = val
+
+        return data_dict
+
 
 class StateEstimate:
-    def __init__(self, step, x1, x2, x3, P, state_names=None):
+    def __init__(self, step, state, P, state_names):
         self.step = step
-        self.x1 = x1
-        self.x2 = x2
-        self.x3 = x3
+        self.state = state
         self.P = P
         self.state_names = state_names
 
     def return_step(self):
         return self.step
 
+    def return_data_array(self):
+        return self.state
+
+    def return_data_list(self):
+        return list(self.state)
+
+    def return_state_names(self):
+        return self.state_names
+
+    def return_data_dict(self):
+        data_dict = {}
+        for key, val in zip(self.state_names, self.state):
+            data_dict[key] = val
+
+        return data_dict
+
 
 class InformationEstimate(StateEstimate):
-    def __init__(self, step, i1, i2, i3, I, state_names=None):
-        super().__init__(step, i1, i2, i3, I, state_names)
+    def __init__(self, step, i, I, state_names=None):
+        super().__init__(step, i, I, state_names)

@@ -1,5 +1,6 @@
 from math import atan2
 import matplotlib.pyplot as plt
+import numpy as np
 
 class Landmark:
     def __init__(self, name, x, y, model):
@@ -25,8 +26,9 @@ class Landmark:
 
     def return_measurement(self, state):
 
-        x1 = state.x_1
-        y1 = state.x_2
+        state_dict = state.return_data_dict()
+        x1 = state_dict["x1"]
+        y1 = state_dict["x2"]
 
         x2 = self.vertices[0]
         y2 = self.vertices[1]
@@ -44,6 +46,30 @@ class Landmark:
 
         elif self.bearing_measurements:
             b = atan2(y2 - y1, x2 - x1)
+
+            return [(b, 'bearing', self.name)]
+
+        else:
+            return []
+
+    def return_grid_measurement(self, X, Y):
+
+        x2 = self.vertices[0]
+        y2 = self.vertices[1]
+
+        if self.range_measurements and self.bearing_measurements:
+            r = np.sqrt(np.square(x2 - X) + np.square(y2 - Y))
+            b = np.arctan2(y2 - Y, x2 - X)
+
+            return [(r, 'range', self.name), (b, 'bearing', self.name)]
+
+        elif self.range_measurements:
+            r = np.sqrt(np.square(x2 - X) + np.square(y2 - Y))
+
+            return [(r, 'range', self.name)]
+
+        elif self.bearing_measurements:
+            b = np.arctan2(y2 - Y, x2 - X)
 
             return [(b, 'bearing', self.name)]
 

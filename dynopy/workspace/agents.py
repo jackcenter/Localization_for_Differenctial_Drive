@@ -5,8 +5,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy.integrate as sp_integrate
 
-from dynopy.dataobjects.state import GroundTruth
+from dynopy.dataobjects.state import GroundTruth, StateEstimate
 from dynopy.dataobjects.input import Input
+from dynopy.dataobjects.measurement import Measurement
 from dynopy.estimationtools.tools import monte_carlo_sample
 
 
@@ -30,9 +31,12 @@ class TwoDimensionalRobot:
         self.dt = dt
 
         self.current_measurement_step = 0
-        self.input_list = []
-        self.measurement_list = []
         self.workspace = None
+        self.inputs = []
+        self.measurements = []
+        self.perfect_measurements = []
+        self.particle_set = None
+        self.particle_set_list = []
 
     def plot_initial(self):
         """
@@ -66,7 +70,11 @@ class TwoDimensionalRobot:
 
             for row in reader:
                 u = Input.create_from_dict(row)
-                self.input_list.append(u)
+                self.inputs.append(u)
+
+    def initialize_particle_set(self, particle_set):
+        self.particle_set = particle_set
+        self.particle_set_list.append(self.particle_set)
 
 
 class DifferentialDrive(TwoDimensionalRobot):
@@ -78,18 +86,17 @@ class DifferentialDrive(TwoDimensionalRobot):
 
         self.current_measurement_step = 0
         self.workspace = None
-        self.input_list = []
+        self.inputs = []
         self.ground_truth = []
-        self.measurement_list = []
+        self.measurements = []
         self.perfect_measurements = []
         self.particle_set = []
         self.particle_set_list = []
 
     def get_ground_truth(self):
-
         self.ground_truth.append(GroundTruth(0, self.state, self.state_names))
 
-        for u in self.input_list:
+        for u in self.inputs:
             x_k0 = self.ground_truth[-1].return_data_array()
             k0 = self.ground_truth[-1].return_step()
 
@@ -105,23 +112,63 @@ class DifferentialDrive(TwoDimensionalRobot):
             self.ground_truth.append(GroundTruth(k1, np.squeeze(noisy_state), self.state_names))
 
     def get_perfect_measurements(self):
-
+        measurement_list = []
         for state in self.ground_truth:
-            k = state.get_step()
-            measurements = []
-            measurement_values = []
-            output_types = []
-            source_name = []
+            measurement = self.get_predicted_measurement(state)
+            measurement_list.append(measurement)
 
-            for landmark in self.workspace.landmarks:
-                measurements = landmark.return_measurement(state)
+        self.perfect_measurements = measurement_list
 
-            for meas in measurements:
-                measurement_values.append(meas[0])
-                output_types.append(meas[1])
-                source_name.append(meas[2])
+    def simulate_noisy_measurements(self):
+        noisy_measurements = []
+        for meas in self.perfect_measurements:
+            noisy_measurements.append(self.get_noisy_measurement(meas))
 
-                # TODO: create a measurement object from these values then add them to the perf meas list!
+        self.measurements = noisy_measurements
+
+    def get_noisy_measurement(self, true_measurement: Measurement):
+        k = true_measurement.return_step()
+        sample = np.squeeze(monte_carlo_sample(true_measurement.return_data_vector(), self.R))
+
+        noisy_measurement = Measurement(k,
+                                        sample,
+                                        true_measurement.return_category_list(),
+                                        true_measurement.return_name_list()
+                                        )
+
+        return noisy_measurement
+
+    def run_prediction_update(self, x_k0, u):
+        """
+        given an initial state and an input, this function runs the full system dynamics prediction.
+        :param x_k0: initial state [StateEstimate object]
+        :param u: input [Input object]
+        :return: StateEstimate object for the next time step.
+        """
+        k0 = x_k0.return_step()
+        k1 = k0 + 1
+        sol = sp_integrate.solve_ivp(self.dynamics_ode, (k0 * self.dt, k1 * self.dt), x_k0.return_data_list(),
+                                     args=(u, self.L, self.r))
+        x_k1 = sol.y[:, -1]
+        state = StateEstimate(k1, x_k1, None, x_k0.return_state_names())
+        return state
+
+    def get_predicted_measurement(self, state):
+        k = state.return_step()
+        measurements = []
+        measurement_values = []
+        output_category = []
+        source_name = []
+
+        for landmark in self.workspace.landmarks:
+            measurements.extend(landmark.return_measurement(state))
+
+        for meas in measurements:
+            measurement_values.append(meas[0])
+            output_category.append(meas[1])
+            source_name.append(meas[2])
+
+        return Measurement(k, np.array(measurement_values), output_category, source_name)
 
     @staticmethod
     def dynamics_ode(t, x, u, L, r):

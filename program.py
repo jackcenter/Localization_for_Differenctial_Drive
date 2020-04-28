@@ -21,7 +21,7 @@ def print_header():
 
 def get_user_input():
     print('Select from the following programs:')
-    print(' [1]: Individual Simulation')
+    print(' [1]: Static Simulation')
     # print(' [2]: Benchmarking')
     # print(' [3]: Decentralized Data Fusion')
     # print(' [4]: Target Search')
@@ -40,19 +40,19 @@ def get_user_input():
 
 def interpret_command(cmd):
     if cmd == '1':      # path planning
-        status = os.system("python UI_single_simulation.py")
+        status = os.system("python UI_static_simulation.py")
 
     elif cmd == '2':
         print(" Sorry, this section is not functional at this time")
-        # status = os.system("python benchmarking/UI_single_simulation.py")
+        # status = os.system("python benchmarking/UI_static_simulation.py")
 
     elif cmd == '3':
         print(" Sorry, this section is not functional at this time")
-        # status = os.system("python decentralized_data_fusion/UI_single_simulation.py")
+        # status = os.system("python decentralized_data_fusion/UI_static_simulation.py")
 
     elif cmd == '4':
         print(" Sorry, this section is not functional at this time")
-        # status = os.system("python target_search/UI_single_simulation.py")
+        # status = os.system("python target_search/UI_static_simulation.py")
 
     elif cmd == 'q':
         print(" closing program ... goodbye!")
