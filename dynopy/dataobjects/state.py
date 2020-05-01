@@ -49,8 +49,8 @@ class StateEstimate:
     def return_data_list(self):
         return list(self.state)
 
-    def return_state_names(self):
-        return self.state_names
+    def return_data_vector(self):
+        return np.reshape(self.state, (-1, 1))
 
     def return_data_dict(self):
         data_dict = {}
@@ -59,7 +59,13 @@ class StateEstimate:
 
         return data_dict
 
+    def return_state_names(self):
+        return self.state_names
+
 
 class InformationEstimate(StateEstimate):
     def __init__(self, step, i, I, state_names=None):
         super().__init__(step, i, I, state_names)
+
+    def return_information_matrix(self):
+        return self.P

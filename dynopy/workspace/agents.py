@@ -138,6 +138,11 @@ class DifferentialDrive(TwoDimensionalRobot):
 
         return noisy_measurement
 
+    def convert_measurements_to_coordinates(self):
+        pass
+        # for meas in self.measurements:
+
+
     def run_prediction_update(self, x_k0, u):
         """
         given an initial state and an input, this function runs the full system dynamics prediction.

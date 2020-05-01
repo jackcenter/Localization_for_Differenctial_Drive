@@ -2,6 +2,7 @@ from math import atan2
 import matplotlib.pyplot as plt
 import numpy as np
 
+
 class Landmark:
     def __init__(self, name, x, y, model):
         self.name = name
@@ -75,6 +76,18 @@ class Landmark:
 
         else:
             return []
+
+    def get_measurement_coordinate(self, measurement):
+        if self.range_measurements and self.bearing_measurements:
+            r = measurement.return_value('range', self.name)
+            b = measurement.return_value('bearing', self.name)
+
+            x = self.vertices[0] - r
+
+        else:
+            print("ERROR: landmark does not provide both range and bearing measurements so it cannot provide a "
+                  "coordinate")
+
 
     @staticmethod
     def create_from_dict(settings):

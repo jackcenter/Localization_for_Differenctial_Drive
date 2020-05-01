@@ -17,3 +17,17 @@ def monte_carlo_sample(mu: np.ndarray, r: np.ndarray, t=1):
     sample = mu + s_v @ q_k
 
     return sample
+
+
+class DiscreteLinearStateSpace:
+    def __init__(self, f, g, h, m, q, r, dt):
+        self.F = f
+        self.G = g
+        self.H = h
+        self.M = m
+        self.Q = q
+        self.R = r
+        self.dt = dt
+
+    def get_dimensions(self):
+        return [np.size(self.F, 1), np.size(self.H, 1)]

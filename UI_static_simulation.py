@@ -25,6 +25,7 @@ def get_user_input():
     print(' [2]: Importance Sampling')
     print(' [3]: Sequential Importance Sampling (Bootstrap) Particle Filter')
     print(' [4]: Decentralized Data Fusion')
+    print(' [5]: Comparison')
     print(' [q]: Quit')
     print()
 
@@ -35,7 +36,7 @@ def get_user_input():
 
 
 def interpret_command(cmd):
-    if cmd == '1':      # path planning
+    if cmd == '1':
         print('---------------------------------------------------')
         print('              Static Simulation:')
         print('              Grid Approximation')
@@ -66,6 +67,14 @@ def interpret_command(cmd):
         print('---------------------------------------------------')
         print()
         sim.run("Decentralized_Date_Fusion")
+
+    elif cmd == '5':
+        print('---------------------------------------------------')
+        print('              Static Simulation:')
+        print('                  Comparison')
+        print('---------------------------------------------------')
+        print()
+        sim.run("Comparison")
 
     elif cmd == 'q':
         return False

@@ -15,21 +15,46 @@ def main():
 
 def run(sim_name):
 
+    k_final = 5
+    particles = 10
     if sim_name == "Grid_Approximation":
         workspace = setup(1)
-        simulate_Grid_Approximation(workspace)
+        x1, y1, m1, x2, y2, m2, x3, y3, m3, post = simulate_Grid_Approximation(workspace, k_final)
+        print("MMSE estimate:\n  x =     {}\n  y =     {}\n  theta = {}".format(m1, m2, m3))
+        plot_grid_approximation(x1, y1, m1, x2, y2, m2, x3, y3, m3)
+
+        plt.figure()
+        plt.imshow(np.sum(post, axis=2), cmap=plt.cm.Greys, origin='lower', extent=[0, 100, 41, 59])
+        workspace.plot()
 
     elif sim_name == "Importance_Sampling":
         workspace = setup(1)
-        simulate_Importance_Sampling(workspace)
+        agent = simulate_Importance_Sampling(workspace, particles, k_final)
+
+        plot_particles(agent.particle_set_list, 0)
+        plot_particles(agent.particle_set_list, -1)
 
     elif sim_name == "Particle_Filter":
         workspace = setup(1)
-        simulate_Particle_Filter(workspace)
+        agent = simulate_Particle_Filter(workspace, particles, k_final)
+
+        plot_particles(agent.particle_set_list, 0)
 
     elif sim_name == "Decentralized_Date_Fusion":
         workspace = setup(2)
         simulate_DDF(workspace)
+
+    elif sim_name == "Comparison":
+        workspace = setup(2)
+        x1, y1, m1, x2, y2, m2, x3, y3, m3, post = simulate_Grid_Approximation(workspace, k_final)
+        agent = simulate_Particle_Filter(workspace, particles, k_final)
+        plot_comparison(x1, y1, m1, x2, y2, m2, x3, y3, m3, agent.particle_set_list, 0)
+        plot_comparison(x1, y1, m1, x2, y2, m2, x3, y3, m3, agent.particle_set_list)
+        plt.figure()
+        workspace.plot()
+
+    plt.show()
+    return 0
 
 
 def setup(number_of_agents):
@@ -66,12 +91,22 @@ def setup(number_of_agents):
     return workspace
 
 
-def simulate_Grid_Approximation(workspace):
+def simulate_Grid_Approximation(workspace, k_final=None):
     """
     runs a grid approximation for each agents
     :param workspace: workspace object created in setup
+    :param k_final: last time step to estimate through
     :return: None
     """
+    agent = workspace.agents[0]
+
+    if not k_final:
+        k_final = len(agent.measurements)
+
+    if k_final > len(agent.measurements):
+        print("ERROR: there are not that many measurements")
+        k_final = len(agent.measurements)
+
     dx = 1
     dy = 1
     dtheta = pi/36
@@ -96,7 +131,6 @@ def simulate_Grid_Approximation(workspace):
     pTheta = theta_uniform.pdf(Theta)
     pJoint = pX*pY*pTheta
 
-    agent = workspace.agents[0]
     std = np.sqrt(np.diag(agent.R))
     mu = np.zeros(len(std))
 
@@ -107,7 +141,7 @@ def simulate_Grid_Approximation(workspace):
 
     # loop through the measurements
     pPost = pJoint
-    for meas in agent.measurements[0:5]:
+    for meas in agent.measurements[0:k_final]:
         z = meas.return_data_array()
 
         measurements = []
@@ -144,13 +178,80 @@ def simulate_Grid_Approximation(workspace):
     pTheta = np.sum(pTheta, axis=0)
     Theta_mmse = np.trapz(theta_range*pTheta)
 
-    print("MMSE estimate:\n  x =     {}\n  y =     {}\n  theta = {}".format(X_mmse, Y_mmse, Theta_mmse))
+    return x_range, pX, X_mmse, y_range, pY, Y_mmse, theta_range, pTheta, Theta_mmse, pPost
 
-    plot_grid_approximation(x_range, pX, X_mmse, y_range, pY, Y_mmse, theta_range, pTheta, Theta_mmse)
-    plt.figure()
-    plt.imshow(np.sum(pPost, axis=2), cmap=plt.cm.Greys, origin='lower', extent=[0, 100, 41, 59])
-    workspace.plot()
-    plt.show()
+
+def simulate_Importance_Sampling(workspace, num_of_particles=10, k_final=None):
+    agent = workspace.agents[0]
+
+    if not k_final:
+        k_final = len(agent.measurements)
+
+    if k_final > len(agent.measurements):
+        print("ERROR: there are not that many measurements")
+        k_final = len(agent.measurements)
+    # Initial probability
+    x_uniform = stats.uniform(loc=5, scale=8)  # U[5, 13]
+    y_uniform = stats.uniform(loc=46, scale=8)  # U[46, 54]
+    theta_uniform = stats.uniform(loc=0, scale=2 * pi)  # U[0, 2pi]
+    distro_list = [x_uniform, y_uniform, theta_uniform]
+
+    state_names = agent.state_names
+    initial_particle_set = construct_initial_particles(distro_list, num_of_particles, agent.Q, state_names)
+    agent.initialize_particle_set(initial_particle_set)
+
+    inputs = agent.inputs
+    measurements = agent.measurements
+    print(len(inputs))
+    print(len(measurements))
+    for u, z in zip(inputs[0: k_final], measurements[0: k_final]):
+        agent.particle_set = SIS(agent.particle_set, z, agent, u)
+        agent.particle_set_list.append(agent.particle_set)
+
+    for particle in agent.particle_set_list[-1]:
+        print(particle[0].__dict__, particle[1])
+
+    print(len(agent.particle_set_list))
+
+    return agent
+
+
+def simulate_Particle_Filter(workspace, num_of_particles=10, k_final=None):
+    agent = workspace.agents[0]
+
+    if not k_final:
+        k_final = len(agent.measurements)
+
+    if k_final > len(agent.measurements):
+        print("ERROR: there are not that many measurements")
+        k_final = len(agent.measurements)
+
+    x_uniform = stats.uniform(loc=5, scale=8)  # U[5, 13]
+    y_uniform = stats.uniform(loc=46, scale=8)  # U[46, 54]
+    theta_uniform = stats.uniform(loc=0, scale=2 * pi)  # U[0, 2pi]
+    distro_list = [x_uniform, y_uniform, theta_uniform]
+
+    state_names = agent.state_names
+    initial_particle_set = construct_initial_particles(distro_list, num_of_particles, agent.Q, state_names)
+    agent.initialize_particle_set(initial_particle_set)
+
+    inputs = agent.inputs
+    measurements = agent.measurements
+    for u, z in zip(inputs[0: k_final], measurements[0: k_final]):
+        agent.particle_set = bootstrap(agent.particle_set, z, agent, u)
+        agent.particle_set_list.append(agent.particle_set)
+
+    for particle in agent.particle_set_list[-1]:
+        print(particle[0].__dict__)
+
+    print(len(agent.particle_set_list))
+
+    return agent
+
+
+def simulate_DDF(workspace):
+
+    print("You DDF'ed")
 
 
 def plot_grid_approximation(x1, y1, m1, x2, y2, m2, x3, y3, m3):
@@ -177,59 +278,76 @@ def plot_grid_approximation(x1, y1, m1, x2, y2, m2, x3, y3, m3):
     ax1.grid(True)
 
 
-def simulate_Importance_Sampling(workspace):
+def plot_particles(particle_set_list, k=-1, marker='ko'):
+    x1_ord = []
+    x2_ord = []
+    x3_ord = []
+    w_ord = []
 
-    # Initial probability
-    x_uniform = stats.uniform(loc=5, scale=8)  # U[5, 13]
-    y_uniform = stats.uniform(loc=46, scale=8)  # U[46, 54]
-    theta_uniform = stats.uniform(loc=0, scale=2 * pi)  # U[0, 2pi]
-    distro_list = [x_uniform, y_uniform, theta_uniform]
+    for p in particle_set_list[k]:
+        x1_ord.append(p[0].state[0])
+        x2_ord.append(p[0].state[1])
+        x3_ord.append(p[0].state[2])
+        w_ord.append(p[1])
 
-    agent = workspace.agents[0]
-    state_names = agent.state_names
-    initial_particle_set = construct_initial_particles(distro_list, 10, agent.Q, state_names)
-    agent.initialize_particle_set(initial_particle_set)
+    fig, (ax1, ax2, ax3) = plt.subplots(3, 1)
+    fig.tight_layout(pad=1)
+    fig.subplots_adjust(left=0.1)
 
-    inputs = agent.inputs
-    measurements = agent.measurements
-    print(len(inputs))
-    print(len(measurements))
-    for u, z in zip(inputs, measurements):
-        agent.particle_set = SIS(agent.particle_set, z, agent, u)
-        agent.particle_set_list.append(agent.particle_set)
+    ax1.plot(x1_ord, w_ord, marker)
+    ax1.set_xlabel(r"Easting, $\xi$  [inches]")
+    ax1.set_ylabel(r"$p(\xi)$")
+    ax1.grid(True)
 
-    for particle in agent.particle_set_list[-1]:
-        print(particle[0].__dict__)
+    ax2.plot(x2_ord, w_ord, marker)
+    ax2.set_xlabel(r"Northing, $\eta$ [inches]")
+    ax2.set_ylabel(r"$p(\eta)$")
+    ax1.grid(True)
 
-    print(len(agent.particle_set_list))
-
-
-def simulate_Particle_Filter(workspace):
-    x_uniform = stats.uniform(loc=5, scale=8)  # U[5, 13]
-    y_uniform = stats.uniform(loc=46, scale=8)  # U[46, 54]
-    theta_uniform = stats.uniform(loc=0, scale=2 * pi)  # U[0, 2pi]
-    distro_list = [x_uniform, y_uniform, theta_uniform]
-
-    agent = workspace.agents[0]
-    state_names = agent.state_names
-    initial_particle_set = construct_initial_particles(distro_list, 10, agent.Q, state_names)
-    agent.initialize_particle_set(initial_particle_set)
-
-    inputs = agent.inputs
-    measurements = agent.measurements
-    for u, z in zip(inputs, measurements):
-        agent.particle_set = bootstrap(agent.particle_set, z, agent, u)
-        agent.particle_set_list.append(agent.particle_set)
-
-    for particle in agent.particle_set_list[-1]:
-        print(particle[0].__dict__)
-
-    print(len(agent.particle_set_list))
+    ax3.plot(x3_ord, w_ord, marker)
+    ax3.set_xlabel(r"Orientation, $\theta$ [radians]")
+    ax3.set_ylabel(r"$p(\theta)$")
+    ax1.grid(True)
 
 
-def simulate_DDF(workspace):
+def plot_comparison(x1, y1, m1, x2, y2, m2, x3, y3, m3, particle_set_list, k=-1):
 
-    print("You DDF'ed")
+    x1_ord = []
+    x2_ord = []
+    x3_ord = []
+    w_ord = []
+
+    for p in particle_set_list[k]:
+        x1_ord.append(p[0].state[0])
+        x2_ord.append(p[0].state[1])
+        x3_ord.append(p[0].state[2])
+        w_ord.append(p[1])
+
+    fig, (ax1, ax2, ax3) = plt.subplots(3, 1)
+    fig.tight_layout(pad=1)
+    fig.subplots_adjust(left=0.1)
+    marker = 'ko'
+
+    ax1.plot(x1, y1)
+    ax1.axvline(x=m1, ymin=0.05, ymax=0.95, c='k', ls='--')
+    ax1.plot(x1_ord, w_ord, marker)
+    ax1.set_xlabel(r"Easting, $\xi$  [inches]")
+    ax1.set_ylabel(r"$p(\xi)$")
+    ax1.grid(True)
+
+    ax2.plot(x2, y2)
+    ax2.axvline(x=m2, ymin=0.05, ymax=0.95, c='k', ls='--')
+    ax2.plot(x2_ord, w_ord, marker)
+    ax2.set_xlabel(r"Northing, $\eta$ [inches]")
+    ax2.set_ylabel(r"$p(\eta)$")
+    ax2.grid(True)
+
+    ax3.plot(x3, y3)
+    ax3.axvline(x=m3, ymin=0.05, ymax=0.95, c='k', ls='--')
+    ax3.plot(x3_ord, w_ord, marker)
+    ax3.set_xlabel(r"Orientation, $\theta$ [radians]")
+    ax3.set_ylabel(r"$p(\theta)$")
+    ax3.grid(True)
 
 
 if __name__ == "__main__":

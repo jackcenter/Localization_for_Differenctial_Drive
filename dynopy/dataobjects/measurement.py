@@ -33,3 +33,8 @@ class Measurement:
 
     def return_name_list(self):
         return self.names
+
+    def return_value(self, cat, name):
+        for value, category, measurement_name in zip(self.measurement, self.categories, self.names):
+            if cat == category and name == measurement_name:
+                return value

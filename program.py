@@ -22,12 +22,11 @@ def print_header():
 def get_user_input():
     print('Select from the following programs:')
     print(' [1]: Static Simulation')
-    # print(' [2]: Benchmarking')
-    # print(' [3]: Decentralized Data Fusion')
-    # print(' [4]: Target Search')
+    # print(' [2]: Linear Dynamics Simulation')
+    # print(' [3]: Nonlinear Dynamics Simulation')
     print(' [q]: Quit')
     print()
-    print(' NOTE: parameters for landmarks and dynamics models can be changed in settings.')
+    print(' NOTE: parameters for landmarks and dynamics models can be changed the configuration file.')
     print()
 
     cmd = input(' Select an exercise would you like to run: ')
